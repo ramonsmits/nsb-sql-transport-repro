@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using System.Transactions;
 using Microsoft.Extensions.Hosting;
 using NServiceBus;
-using NServiceBus.Transport.SQLServer;
+using NServiceBus.Transport.SqlServer;
 
 namespace Service
 {
@@ -51,7 +51,7 @@ namespace Service
             TransportExtensions<SqlServerTransport> transport =
                 endpointConfiguration.UseTransport<SqlServerTransport>();
 
-            NServiceBus.Transport.SQLServer.SubscriptionSettings
+            NServiceBus.Transport.SqlServer.SubscriptionSettings
                 subscriptionSettings = transport.SubscriptionSettings();
             subscriptionSettings.DisableSubscriptionCache();
             subscriptionSettings.SubscriptionTableName("subscriptions", "transportSchema");
@@ -59,10 +59,6 @@ namespace Service
             transport.Routing().RouteToEndpoint(
                 Assembly.GetAssembly(typeof(MyCommand)),
                 EndpointName);
-
-
-            DelayedDeliverySettings delayedDeliverySettings = transport.NativeDelayedDelivery();
-            delayedDeliverySettings.DisableTimeoutManagerCompatibility();
 
             transport
                 .Transactions(TransportTransactionMode.ReceiveOnly)
