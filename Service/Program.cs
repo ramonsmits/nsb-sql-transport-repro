@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using NServiceBus;
 
 namespace Service
 {
@@ -9,20 +10,20 @@ namespace Service
     {
         public static async Task Main(string[] args)
         {
-            await Host.CreateDefaultBuilder(args)
+            var host = Host.CreateDefaultBuilder(args)
                 .UseConsoleLifetime().ConfigureLogging(
                     _ =>
                     {
                         _.ClearProviders();
                         _.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Debug);
                     })
-                .ConfigureServices(
-                    (hostContext, services) =>
-                    {
-                        services.AddHostedService<MyService>();
-                    })
-                .Build()
-                .RunAsync().ConfigureAwait(false);
+                .UseNServiceBus(hostBuilderContext =>
+                {
+                    return EndpointFactory.GetConfiguration();
+                })
+                .Build();
+
+            await host.RunAsync().ConfigureAwait(false);
         }
     }
 }
