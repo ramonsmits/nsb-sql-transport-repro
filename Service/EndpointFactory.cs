@@ -9,12 +9,10 @@ class EndpointFactory
 {
     public static EndpointConfiguration GetConfiguration()
     {
-
         const string EndpointName = "endpoint name";
         var endpointConfiguration = new EndpointConfiguration(EndpointName);
         endpointConfiguration.UniquelyIdentifyRunningInstance()
             .UsingNames(EndpointName, Environment.MachineName);
-
 
         endpointConfiguration.SendFailedMessagesTo("error");
         endpointConfiguration.AuditProcessedMessagesTo("audit");
@@ -39,14 +37,13 @@ class EndpointFactory
             }
         });
 
-        ConventionsBuilder conventions = endpointConfiguration.Conventions();
+        var conventions = endpointConfiguration.Conventions();
         conventions
             .DefiningEventsAs(_ => _.Name.EndsWith("Event"))
             .DefiningCommandsAs(_ => _.Name.EndsWith("Command"))
             .DefiningMessagesAs(_ => _.Name.EndsWith("Message"));
 
-        TransportExtensions<SqlServerTransport> transport =
-            endpointConfiguration.UseTransport<SqlServerTransport>();
+        var transport = endpointConfiguration.UseTransport<SqlServerTransport>();
 
         var subscriptionSettings = transport.SubscriptionSettings();
         subscriptionSettings.DisableSubscriptionCache();
@@ -64,7 +61,7 @@ class EndpointFactory
         return endpointConfiguration;
     }
 
-    public static Task<IEndpointInstance> CreateEndpoint()
+    public static Task<IEndpointInstance> Create()
     {
         return Endpoint.Start(GetConfiguration());
     }
