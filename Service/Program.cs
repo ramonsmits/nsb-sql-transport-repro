@@ -15,12 +15,14 @@ namespace Service
                     _ =>
                     {
                         _.ClearProviders();
+                        _.AddConsole();
                         _.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Debug);
                     })
-                .UseNServiceBus(hostBuilderContext =>
-                {
-                    return EndpointFactory.GetConfiguration();
-                })
+                .ConfigureServices(
+                    (hostContext, services) =>
+                    {
+                        services.AddHostedService<MyService>();
+                    })
                 .Build();
 
             await host.RunAsync().ConfigureAwait(false);
