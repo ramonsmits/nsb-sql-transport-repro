@@ -2,49 +2,53 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using NServiceBus;
 
-//using NServiceBus.Transport.SQLServer;
-
-namespace Service
+public class MyService : BackgroundService
 {
-    public class MyService : BackgroundService
+    readonly IHostApplicationLifetime applicationLifetime;
+    readonly ILogger logger;
+    IEndpointInstance endpoint;
+
+    public MyService(IHostApplicationLifetime applicationLifetime, ILogger<MyService> logger)
     {
-        private IEndpointInstance endpoint;
+        this.applicationLifetime = applicationLifetime;
+        this.logger = logger;
+    }
 
-        public override async Task StopAsync(CancellationToken cancellationToken)
+    public override async Task StopAsync(CancellationToken cancellationToken)
+    {
+        try
         {
-            try
+            if (endpoint != null)
             {
-                //if (this.endpoint != null)
-                {
-                    await this.endpoint.Stop();
-                }
+                await endpoint.Stop();
             }
-            catch (Exception ex)
-            {
-                Environment.FailFast("Failed to stop correctly.", ex);
-            }
-
-            await base.StopAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogCritical(ex,"StopAsync");
+            Environment.FailFast("Failed to stop correctly.", ex);
         }
 
-        protected override async Task ExecuteAsync(CancellationToken token)
-        {
-            try
-            {
-                await EndpointFactory.CreateEndpoint();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
+        await base.StopAsync(cancellationToken);
+    }
 
-            while (!token.IsCancellationRequested)
-            {
-                await Task.Delay(1000, token);
-            }
+    protected override async Task ExecuteAsync(CancellationToken ct)
+    {
+        try
+        {
+            endpoint =  await EndpointFactory.Create();
+            await Task.Delay(Timeout.InfiniteTimeSpan, ct);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception e)
+        {
+            logger.LogCritical(e, "ExecuteAsync");
+            applicationLifetime.StopApplication();
         }
     }
 }
